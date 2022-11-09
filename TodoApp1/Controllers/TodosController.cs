@@ -19,6 +19,9 @@ namespace TodoApp1.Controllers
         public async Task<IActionResult> GetTodos()
 
         {
+            if (dbContext.Todos == null)
+                return NotFound();
+
             return Ok(await dbContext.Todos.ToListAsync());
 
         }
@@ -93,19 +96,46 @@ namespace TodoApp1.Controllers
         {
             var todo = await dbContext.Todos.FindAsync(id);
 
-            if(todo != null)
+            if (todo != null)
             {
-              dbContext.Todos.Remove(todo);
-              await dbContext.SaveChangesAsync();
+                dbContext.Todos.Remove(todo);
+                await dbContext.SaveChangesAsync();
                 return Ok(todo);
             }
 
             return NotFound();
- 
+
+
+        }
+
+        [HttpGet("{page}")]
+        public async Task<ActionResult<List<Todo>>>GetTodos(int page)
+        {
+            if(dbContext.Todos == null)
+                return NotFound();
+
+            var pageResults = 3f;
+            var pageCount = Math.Ceiling(dbContext.Todos.Count() / pageResults);
+
+            var todoItems = await dbContext.Todos
+                .Skip((page - 1) * (int)pageResults)
+                .Take((int)pageResults)
+                .ToListAsync();
+
+            var Response = new TodoResponse
+            {
+                Todos = todoItems,
+                CurrentPage = page,
+                Pages = (int)pageCount
+
+            };
+
+            return Ok(Response);
 
         }
 
 
     }
+
 
 }
